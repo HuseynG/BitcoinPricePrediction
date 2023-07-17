@@ -33,7 +33,7 @@ def normalize(df, cols_to_scale, close_col):
 
     return df_scaled, scaler_general, scaler_close
 
-def create_sequence_of_data(data, input_seq_len, output_seq_len=1, y_col='close'):
+def create_sequence_of_data(data, input_seq_len, output_seq_len=1, y_col='close', output_as_seq=True):
     Xs = []
     Ys = []
 
@@ -42,10 +42,14 @@ def create_sequence_of_data(data, input_seq_len, output_seq_len=1, y_col='close'
     # converting DataFrame to numpy array
     data = data.values
 
-    for i in range(len(data)-input_seq_len-output_seq_len+1):
+    # for i in range(len(data)-input_seq_len-output_seq_len+1):
+    for i in range(len(data)-input_seq_len-(output_seq_len if not output_as_seq else 0)):
         x = data[i:(i+input_seq_len)]
-        y = data[(i+input_seq_len):(i+input_seq_len+output_seq_len), y_col_position]
-
+        if output_as_seq:
+            y = data[(i+input_seq_len):(i+input_seq_len+output_seq_len), y_col_position]
+        else:
+            # extracting the target output and ensure it is a 1D numpy array
+            y = np.atleast_1d(data[(i+input_seq_len+output_seq_len), y_col_position])
         Xs.append(x)
         Ys.append(y)
 
@@ -62,9 +66,9 @@ def split_data(X, y, train_frac=0.9, val_frac=0.05):
 
     return X_train, X_val, X_test, y_train, y_val, y_test
 
-def preprocess_data(df, batch_size = 32, input_seq_len=24, output_seq_len=1):
+def preprocess_data(df, batch_size = 32, input_seq_len=24, output_seq_len=1, output_as_seq=True):
     scaled_df, scaler_general, scaler_close = normalize(df, list(df.columns.drop(["close"])), "close")
-    X, y = create_sequence_of_data(scaled_df, input_seq_len, output_seq_len)
+    X, y = create_sequence_of_data(scaled_df, input_seq_len, output_seq_len, output_as_seq=output_as_seq)
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(X, y)
     # print(X_train.shape)
     # print(y_train.shape)
@@ -89,30 +93,28 @@ def preprocess_data(df, batch_size = 32, input_seq_len=24, output_seq_len=1):
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     print(X_train_tensor.shape)
-    print(y_train_tensor)
+    print(y_train_tensor.shape)
     return scaled_df, scaler_general, scaler_close, train_dataloader, val_dataloader, test_dataloader
 
 
 class Trainer:
 
-    def __init__(self, model, train_dataloader, val_dataloader, test_dataloader, criterion, optimiser,
-                 scheduler, device, num_epochs=100, early_stopping_patience_limit=10,
-                 is_save_model=False, scaler=None):
-        self.model = model
-        self.train_dataloader = train_dataloader
-        self.val_dataloader = val_dataloader
-        self.test_dataloader = test_dataloader
-        self.criterion = criterion
-        self.optimiser = optimiser
-        self.scheduler = scheduler
-        self.device = device
-        self.num_epochs = num_epochs
-        self.early_stopping_patience_limit = early_stopping_patience_limit
+    def __init__(self, **kwargs):
+        self.model = kwargs.get('model')
+        self.train_dataloader = kwargs.get('train_dataloader')
+        self.val_dataloader = kwargs.get('val_dataloader')
+        self.test_dataloader = kwargs.get('test_dataloader')
+        self.criterion = kwargs.get('criterion')
+        self.optimiser = kwargs.get('optimiser')
+        self.scheduler = kwargs.get('scheduler')
+        self.device = kwargs.get('device')
+        self.num_epochs = kwargs.get('num_epochs', 100)
+        self.early_stopping_patience_limit = kwargs.get('early_stopping_patience_limit', 10)
         self.early_stopping_patience_counter = 0
         self.best_val_loss = float('inf')
         self.best_val_mae  = float('inf')
-        self.is_save_model = is_save_model
-        self.scaler = scaler
+        self.is_save_model = kwargs.get('is_save_model', False)
+        self.scaler = kwargs.get('scaler', None)
 
     def train_model(self):
         self.model.train() # setting to training mode
