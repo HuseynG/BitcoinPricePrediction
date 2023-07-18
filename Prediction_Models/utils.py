@@ -3,7 +3,7 @@ import random
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-
+import torch.nn as nn
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.metrics import mean_squared_error, mean_absolute_error
@@ -115,6 +115,7 @@ class Trainer:
         self.best_val_mae  = float('inf')
         self.is_save_model = kwargs.get('is_save_model', False)
         self.scaler = kwargs.get('scaler', None)
+        self.file_path = kwargs.get('file_path', "best_model.pt")
 
     def train_model(self):
         self.model.train() # setting to training mode
@@ -195,7 +196,7 @@ class Trainer:
                 # saving model?
                 if self.is_save_model:
                     print(f"Model saved. MAE: {self.best_val_mae}")
-                    torch.save(self.model.state_dict(), 'best_model.pt')
+                    torch.save(self.model.module.state_dict() if isinstance(self.model, nn.DataParallel) else self.model.state_dict(), 'best_model.pt')
 
                 self.early_stopping_patience_counter = 0  # Reset the counter
             else:
@@ -213,7 +214,7 @@ class Trainer:
                 # saving model?
                 if self.is_save_model:
                     # print(f"Model saved. VAL LOSS: {self.best_val_loss}")
-                    torch.save(self.model.state_dict(), 'best_model.pt')
+                    torch.save(self.model.module.state_dict() if isinstance(self.model, nn.DataParallel) else self.model.state_dict(), 'best_model.pt')
 
                 self.early_stopping_patience_counter = 0  # Reset the counter
             else:
@@ -236,10 +237,8 @@ class Trainer:
         self.train_losses  = []
         self.val_losses = []
 
-        file_path = "best_model.pt"
-
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        if os.path.exists(self.file_path):
+            os.remove(self.file_path)
 
         for epoch in range(self.num_epochs):
             train_loss = self.train_model()
@@ -257,9 +256,13 @@ class Trainer:
                 break  # Break the loop
 
 
-        # # Loading the best model as final output.
-        if os.path.exists(file_path):
-          self.model.load_state_dict(torch.load(file_path))
+        # Loading the best model as final output.
+        if os.path.exists(self.file_path):
+            state_dict = torch.load(self.file_path)
+            if isinstance(self.model, nn.DataParallel):
+                self.model.module.load_state_dict(state_dict)
+            else:
+                self.model.load_state_dict(state_dict)
 
         return self.train_losses, self.val_losses
 
