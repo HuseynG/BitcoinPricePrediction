@@ -72,10 +72,13 @@ class VanillaTimeSeriesTransformer_EncoderOnly(nn.Module):
         # print("After Transformer Encoder:", x.shape)
 
         # taking the final output for each sequence
-        x = x[-1, :, :]
+        x_last = x[-1, :, :]
+        x_mean = torch.mean(x, dim=0)
         # print("Final output for each sequence:", x.shape)
+        
+        x_res = x_mean + x_last
 
-        x = self.mlp(x)
+        x = self.mlp(x_res)
         # print("After MLP:", x.shape)
 
         return x
