@@ -3,5 +3,6 @@
 *.pkl
 ExploringStuff
 data
+models
 *.pt
 *.pyc
