@@ -196,7 +196,7 @@ class Trainer:
                 # saving model?
                 if self.is_save_model:
                     print(f"Model saved. MAE: {self.best_val_mae}")
-                    torch.save(self.model.module.state_dict() if isinstance(self.model, nn.DataParallel) else self.model.state_dict(), 'best_model.pt')
+                    torch.save(self.model.module.state_dict() if isinstance(self.model, nn.DataParallel) else self.model.state_dict(), self.file_path)
 
                 self.early_stopping_patience_counter = 0  # Reset the counter
             else:
@@ -214,7 +214,7 @@ class Trainer:
                 # saving model?
                 if self.is_save_model:
                     # print(f"Model saved. VAL LOSS: {self.best_val_loss}")
-                    torch.save(self.model.module.state_dict() if isinstance(self.model, nn.DataParallel) else self.model.state_dict(), 'best_model.pt')
+                    torch.save(self.model.module.state_dict() if isinstance(self.model, nn.DataParallel) else self.model.state_dict(), self.file_path)
 
                 self.early_stopping_patience_counter = 0  # Reset the counter
             else:
