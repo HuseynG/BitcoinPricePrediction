@@ -116,6 +116,7 @@ class Trainer:
         self.is_save_model = kwargs.get('is_save_model', False)
         self.scaler = kwargs.get('scaler', None)
         self.file_path = kwargs.get('file_path', "best_model.pt")
+        self.is_teacher_forcing = kwargs.get('is_teacher_forcing', False)
 
     def train_model(self):
         self.model.train() # setting to training mode
@@ -123,7 +124,11 @@ class Trainer:
         for i, batch in enumerate(self.train_dataloader):
             self.optimiser.zero_grad()
             X, y = batch[0].to(self.device), batch[1].to(self.device)
-            output = self.model(X).unsqueeze(-1)
+            # output = self.model(X).unsqueeze(-1)
+            if self.is_teacher_forcing:
+                output = self.model(X, y=y).unsqueeze(-1)
+            else:
+                output = self.model(X).unsqueeze(-1)
             loss = self.criterion(output, y)
             loss.backward()
             self.optimiser.step()
