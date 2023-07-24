@@ -99,6 +99,7 @@ class VanillaTimeSeriesTransformer(nn.Module):
         self.mlp_dropout_rate = kwargs.get('mlp_dropout_rate', 0.2)
 
         self.embedding = nn.Linear(self.num_features, self.d_model)
+        self.decoder_embedding = nn.Linear(1, self.d_model)
         self.pos_encoding = PE(self.d_model)
 
         encoder_layer = nn.TransformerEncoderLayer(self.d_model, self.num_heads, self.dff, self.dropout_rate)
@@ -116,31 +117,41 @@ class VanillaTimeSeriesTransformer(nn.Module):
 
     def forward(self, x, **kwargs):
         x = self.embedding(x) * math.sqrt(self.d_model)
+        print("X Shape after embedding:", x.shape)
+        
         x = self.pos_encoding(x)
+        print("X Shape after positional encoding:", x.shape)
+        
         x = x.transpose(0, 1)  # transformer expect input as (seq_len, batch_size, num_features) by default
+        print("X Shape after transpose:", x.shape)
 
         encoder_output = self.transformer_encoder(x) # encoded input
+        print("Encoder output shape:", encoder_output.shape)
 
-        # preparing target variable for decoder which is intilised with zeros. size is 1 (sequence length) x batch size x model dimension
         target_variable = torch.zeros(1, x.size(1), self.d_model, device=x.device)
+        print("Target variable shape:", target_variable.shape)
 
         decoder_input = target_variable
 
-        # checking if the model is in training mode and true ys are present in kwargs
+        # if it is during training and y is provded and the probability of teacher forcing is higher than set treshold
         if self.training and 'y' in kwargs and torch.rand(1).item() < self.teacher_forcing_ratio:
-            # then Teacher Forcing: feeding the target as the next input
-            decoder_input = kwargs['y'].transpose(0, 1)
+            print("y shape:", kwargs['y'].shape)
+            decoder_input = self.decoder_embedding(kwargs['y']).view(1, -1, self.d_model)  # view is used to match the expected shape of the decoder
+            print("Decoder input shape (after teacher forcing):", decoder_input.shape)
 
-        # passing input for decoder (which is either true ys or 0s) and encoders encoding memory
         output = self.transformer_decoder(decoder_input, encoder_output)
+        print("Decoder output shape:", output.shape)
 
-        # taking the final output for each sequence
         x_last = output[-1, :, :]
-        # taking mean output for each seqeuence
-        x_mean = torch.mean(output, dim=0)
+        print("Last output shape:", x_last.shape)
 
-        # res connection
+        x_mean = torch.mean(output, dim=0)
+        print("Mean output shape:", x_mean.shape)
+
         x_res = x_mean + x_last
+        print("Residual connection shape:", x_res.shape)
+        
         x = self.mlp(x_res)
+        print("Final output shape:", x.shape)
 
         return x
