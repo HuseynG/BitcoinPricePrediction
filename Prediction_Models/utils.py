@@ -10,6 +10,13 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from IPython.display import clear_output
 from pprint import pprint
 
+import time
+import pandas as pd
+from torch.optim import Adam
+from torch.nn import MSELoss
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from hyperopt import fmin, tpe, Trials, STATUS_OK
+from transformer import VanillaTimeSeriesTransformer_EncoderOnly, VanillaTimeSeriesTransformer
 
 def seed_everything(seed=123):
     os.environ['PYTHONHASHSEED'] = str(seed)
@@ -96,6 +103,149 @@ def preprocess_data(df, batch_size = 32, input_seq_len=24, output_seq_len=1, out
     print(y_train_tensor.shape)
     return scaled_df, scaler_general, scaler_close, train_dataloader, val_dataloader, test_dataloader
 
+
+class HyperParamOptimizer:
+    def __init__(self, data_file, model_name, input_seq_len=36, output_seq_len=1, batch_size=256, cuda_='cuda:3'):
+        
+        self.df = pd.read_csv(data_file)
+        self.input_seq_len = input_seq_len
+        self.output_seq_len = output_seq_len
+        self.batch_size = batch_size
+        self.temp_df = None
+        self.cuda_ = cuda_
+        self.model_name = model_name
+        
+
+    def objective(self, params):
+        scaled_df, _, scaler_close, train_dataloader, val_dataloader, test_dataloader = \
+            preprocess_data(self.temp_df, self.batch_size, self.input_seq_len, self.output_seq_len)
+        if (params['num_layers'] <= 0 or params['num_heads'] <= 0 or 
+        params['d_model_by_num_heads'] <= 0 or params['dff'] <= 0 or
+        params['mlp_size'] <= 0):
+            print("Invalid hyperparameters sampled, correcting values...")
+            params['num_layers'] = max(1, params['num_layers'])
+            params['num_heads'] = max(1, params['num_heads'])
+            params['d_model_by_num_heads'] = max(32, params['d_model_by_num_heads'])
+            params['dff'] = max(2, params['dff'])
+            params['mlp_size'] = max(32, params['mlp_size'])
+
+        start_time = int(time.time())
+        device = torch.device(self.cuda_ if torch.cuda.is_available() else 'cpu')
+        num_heads = params['num_heads']
+        d_model = params['d_model_by_num_heads'] * num_heads
+        #### defining the model ####
+        model_current_params = {
+            'num_features': int(len(scaled_df.columns)),
+            'd_model': d_model, 
+            'num_layers': params['num_layers'], 
+            'dff': params['dff'], 
+            'dropout_rate': params['dropout_rate'], 
+            'mlp_size': params['mlp_size'], 
+            'mlp_dropout_rate': params['mlp_dropout_rate'],
+            "num_heads":num_heads}
+
+        model = eval(self.model_name)(**model_current_params)
+        ####
+        
+        model = model.to(device)
+
+        optimiser = Adam(model.parameters(), lr=params['lr'])
+        scheduler = ReduceLROnPlateau(optimiser, 'min', factor=0.9, patience=5)
+        criterion = MSELoss()
+
+        model_trainer = Trainer(model=model,
+                                train_dataloader=train_dataloader,
+                                val_dataloader=val_dataloader,
+                                test_dataloader=test_dataloader,
+                                criterion=criterion,
+                                optimiser=optimiser,
+                                scheduler=scheduler,
+                                device=device,
+                                num_epochs=50,
+                                early_stopping_patience_limit=10,
+                                is_save_model=True,
+                                scaler=scaler_close,
+                                file_path=f"models/best_model_{start_time}.pt")
+
+        _, val_losses = model_trainer.train_loop()
+
+        return {'loss': val_losses[-1], 'status': STATUS_OK}
+
+    def optimize(self, space, df_features, max_evals=100):
+        self.temp_df = self.df[df_features]
+        trials = Trials()
+        best = fmin(
+            fn=self.objective,
+            space=space,
+            algo=tpe.suggest,
+            max_evals=max_evals,
+            trials=trials
+        )
+        return best
+
+    def find_top_features(self, best):
+        stats = {}
+        for cols in self.df.columns:
+            if cols != "close":
+                print(cols)
+                # prepare temp_df
+                temp_df = self.df[["close", cols]]
+
+                # preprocesing temp_df
+                scaled_df, _, scaler_close, train_dataloader, \
+                val_dataloader, test_dataloader = preprocess_data(temp_df,
+                    batch_size = 256,
+                    input_seq_len=self.input_seq_len,
+                    output_seq_len=self.output_seq_len)
+
+                # instantiate model (after hyperparameter tuning)
+                num_features = int(len(scaled_df.columns)) # a.k.a, number of cols in df
+                num_layers = int(best["num_layers"])
+                num_heads = int(best["num_heads"])
+                d_model = int(best['d_model_by_num_heads']) * num_heads
+                dff = int(best['dff'])
+                mlp_size = int(best['mlp_size']) # size of the first MLP layer
+                dropout_rate = round(best['dropout_rate'], 3)  # dropout rate for the Transformer layers
+                mlp_dropout_rate = round(best['mlp_dropout_rate'], 3) # dropout rate for the MLP layers
+
+                # instantiating model
+                model = VanillaTimeSeriesTransformer_EncoderOnly(num_features, num_layers, d_model, num_heads, dff,
+                                                                mlp_size, dropout_rate, mlp_dropout_rate)
+
+                # moving the model to the device (GPU if available)
+                device = torch.device(self.cuda_ if torch.cuda.is_available() else 'cpu')
+                model = model.to(device)
+
+
+                criterion = MSELoss()
+                optimiser = Adam(model.parameters(), lr=round(best['lr'], 6))
+                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, 'min', factor=0.9, patience=5)
+
+                # declaring trainer object
+                model_trainer = Trainer(model=model,
+                                train_dataloader=train_dataloader,
+                                val_dataloader=val_dataloader,
+                                test_dataloader=test_dataloader,
+                                criterion=criterion,
+                                optimiser=optimiser,
+                                scheduler=scheduler,
+                                device=device,
+                                num_epochs=50,
+                                early_stopping_patience_limit=10,
+                                is_save_model=True,
+                                scaler=scaler_close,
+                                file_path = "models/best_model.pt")
+                # training
+                train_losses, val_losses = model_trainer.train_loop()
+                # testing
+                mse, mae = model_trainer.test_model()
+
+                stats[cols] = {
+                    "mse":mse,
+                    "mae":mae
+                }
+
+        return stats
 
 class Trainer:
 

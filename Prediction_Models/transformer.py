@@ -35,22 +35,29 @@ class PE(nn.Module):
 
 
 class VanillaTimeSeriesTransformer_EncoderOnly(nn.Module):
-    def __init__(self, num_features, num_layers, d_model,
-                 num_heads, dff, mlp_size, dropout_rate, mlp_dropout_rate):
+    def __init__(self, **kwargs):
         super(VanillaTimeSeriesTransformer_EncoderOnly, self).__init__()
+        print("model name is ","VanillaTimeSeriesTransformer_EncoderOnly")
+        self.num_features = kwargs.get('num_features')
+        self.d_model = kwargs.get('d_model', 64)
+        self.num_layers = kwargs.get('num_layers', 6)
+        self.num_heads = kwargs.get('num_heads', 8)
+        self.dff = kwargs.get('dff', 1024)
+        self.dropout_rate = kwargs.get('dropout_rate', 0.2)
+        self.mlp_size = kwargs.get('mlp_size', 64)
+        self.mlp_dropout_rate = kwargs.get('mlp_dropout_rate', 0.2)
 
-        self.d_model = d_model
-        self.embedding = nn.Linear(num_features, d_model)
-        self.pos_encoding = PE(d_model)
+        self.embedding = nn.Linear(self.num_features, self.d_model)
+        self.pos_encoding = PE(self.d_model)
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model, num_heads, dff, dropout_rate)
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers)
+        encoder_layer = nn.TransformerEncoderLayer(self.d_model, self.num_heads, self.dff, self.dropout_rate)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, self.num_layers)
 
         self.mlp = nn.Sequential(
-            nn.Linear(d_model, mlp_size),
+            nn.Linear(self.d_model, self.mlp_size),
             nn.ReLU(),
-            nn.Dropout(mlp_dropout_rate),
-            nn.Linear(mlp_size, 1),
+            nn.Dropout(self.mlp_dropout_rate),
+            nn.Linear(self.mlp_size, 1),
         )
 
     def forward(self, x):
@@ -83,12 +90,8 @@ class VanillaTimeSeriesTransformer_EncoderOnly(nn.Module):
 class VanillaTimeSeriesTransformer(nn.Module):
     def __init__(self, **kwargs):
         super(VanillaTimeSeriesTransformer, self).__init__()
-
-
+        print("model name is ","VanillaTimeSeriesTransformer")
         self.num_features = kwargs.get('num_features')
-        # self.input_seq_len = kwargs.get('input_seq_len')
-        # self.output_seq_len = kwargs.get('output_seq_len')
-
         self.d_model = kwargs.get('d_model', 64)
         self.teacher_forcing_ratio = kwargs.get('teacher_forcing_ratio', 0.5)
         self.num_layers = kwargs.get('num_layers', 6)
@@ -117,41 +120,41 @@ class VanillaTimeSeriesTransformer(nn.Module):
 
     def forward(self, x, **kwargs):
         x = self.embedding(x) * math.sqrt(self.d_model)
-        print("X Shape after embedding:", x.shape)
+        # print("X Shape after embedding:", x.shape)
         
         x = self.pos_encoding(x)
-        print("X Shape after positional encoding:", x.shape)
+        # print("X Shape after positional encoding:", x.shape)
         
         x = x.transpose(0, 1)  # transformer expect input as (seq_len, batch_size, num_features) by default
-        print("X Shape after transpose:", x.shape)
+        # print("X Shape after transpose:", x.shape)
 
         encoder_output = self.transformer_encoder(x) # encoded input
-        print("Encoder output shape:", encoder_output.shape)
+        # print("Encoder output shape:", encoder_output.shape)
 
         target_variable = torch.zeros(1, x.size(1), self.d_model, device=x.device)
-        print("Target variable shape:", target_variable.shape)
+        # print("Target variable shape:", target_variable.shape)
 
         decoder_input = target_variable
 
         # if it is during training and y is provded and the probability of teacher forcing is higher than set treshold
         if self.training and 'y' in kwargs and torch.rand(1).item() < self.teacher_forcing_ratio:
-            print("y shape:", kwargs['y'].shape)
+            # print("y shape:", kwargs['y'].shape)
             decoder_input = self.decoder_embedding(kwargs['y']).view(1, -1, self.d_model)  # view is used to match the expected shape of the decoder
-            print("Decoder input shape (after teacher forcing):", decoder_input.shape)
+            # print("Decoder input shape (after teacher forcing):", decoder_input.shape)
 
         output = self.transformer_decoder(decoder_input, encoder_output)
-        print("Decoder output shape:", output.shape)
+        # print("Decoder output shape:", output.shape)
 
         x_last = output[-1, :, :]
-        print("Last output shape:", x_last.shape)
+        # print("Last output shape:", x_last.shape)
 
         x_mean = torch.mean(output, dim=0)
-        print("Mean output shape:", x_mean.shape)
+        # print("Mean output shape:", x_mean.shape)
 
         x_res = x_mean + x_last
-        print("Residual connection shape:", x_res.shape)
+        # print("Residual connection shape:", x_res.shape)
         
         x = self.mlp(x_res)
-        print("Final output shape:", x.shape)
+        # print("Final output shape:", x.shape)
 
         return x
