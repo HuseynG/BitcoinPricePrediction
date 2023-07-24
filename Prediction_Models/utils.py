@@ -73,7 +73,7 @@ def split_data(X, y, train_frac=0.9, val_frac=0.05):
 
     return X_train, X_val, X_test, y_train, y_val, y_test
 
-def preprocess_data(df, batch_size = 32, input_seq_len=24, output_seq_len=1, output_as_seq=True):
+def preprocess_data(df, batch_size = 32, input_seq_len=24, output_seq_len=1, output_as_seq=False):
     scaled_df, scaler_general, scaler_close = normalize(df, list(df.columns.drop(["close"])), "close")
     X, y = create_sequence_of_data(scaled_df, input_seq_len, output_seq_len, output_as_seq=output_as_seq)
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(X, y)
