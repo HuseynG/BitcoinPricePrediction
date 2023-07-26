@@ -6,3 +6,6 @@ data
 models
 *.pt
 *.pyc
+*.txt
+# except requirements.txt
+!requirements.txt
