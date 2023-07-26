@@ -34,22 +34,26 @@ def get_dataset_parameters(opt):
     dataset2num = {
         'elect': 370,
         'flow': 1083,
-        'wind': 29
+        'wind': 29,
+        'btc' : 48 # number of features in the original btc dataset
     }
     dataset2covariate = {
         'elect':3,
         'flow': 3,
-        'wind': 3
+        'wind': 3,
+        'btc' : 3
     }
     dataset2input_len = {
         'elect':169,
         'flow': 192,
-        'wind': 192
+        'wind': 192,
+        'btc' : 73
     }
     dataset2ignore_zero = {
         'elect': True,
         'flow': True,
-        'wind': False
+        'wind': False,
+        'btc' : True
     }
 
     opt.num_seq = dataset2num[opt.dataset]
@@ -88,6 +92,17 @@ def train_epoch(model, training_data, optimizer, opt, epoch):
         optimizer.zero_grad()
 
         mean_pre, sigma_pre = model(sequence)
+        # print("mean_pre shape:", mean_pre.shape)
+        # print("mean_pre min:", torch.min(mean_pre))
+        # print("mean_pre max:", torch.max(mean_pre))
+        # print("mean_pre mean:", torch.mean(mean_pre))
+        # print("mean_pre std:", torch.std(mean_pre))
+
+        # print("sigma_pre shape:", sigma_pre.shape)
+        # print("sigma_pre min:", torch.min(sigma_pre))
+        # print("sigma_pre max:", torch.max(sigma_pre))
+        # print("sigma_pre mean:", torch.mean(sigma_pre))
+        # print("sigma_pre std:", torch.std(sigma_pre))
 
         if epoch == 0 and opt.pretrain:
             full_label = sequence[:, :, 0].clone()
@@ -141,6 +156,18 @@ def eval_epoch(model, validation_data, opt):
 
             """ forward """
             mu_pre, sigma_pre = model.test(sequence, v)
+            # print("mu_pre shape:", mu_pre.shape)
+            # print("mu_pre min:", torch.min(mu_pre))
+            # print("mu_pre max:", torch.max(mu_pre))
+            # print("mu_pre mean:", torch.mean(mu_pre))
+            # print("mu_pre std:", torch.std(mu_pre))
+
+            # print("sigma_pre shape:", sigma_pre.shape)
+            # print("sigma_pre min:", torch.min(sigma_pre))
+            # print("sigma_pre max:", torch.max(sigma_pre))
+            # print("sigma_pre mean:", torch.mean(sigma_pre))
+            # print("sigma_pre std:", torch.std(sigma_pre))
+
 
             likelihood_losses, mse_losses = criterion(mu_pre, sigma_pre, label)
             ae_losses = AE_loss(mu_pre, label, opt.ignore_zero)

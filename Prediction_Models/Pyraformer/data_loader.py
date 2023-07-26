@@ -616,3 +616,69 @@ class windTestDataset(Dataset):
 
         return all_data, label, v
 
+#####
+"""Single step training dataloader for the hourly fulll btc dataset"""
+class btcTrainDataset(Dataset):
+    def __init__(self, data_path, data_name, predict_length, batch_size):
+        self.data = torch.from_numpy(np.load(os.path.join(data_path, f'train_data_full_{data_name}_w_cov.npy')))
+        
+        # Resample windows according to the average amplitude like wind dataset
+        v = np.load(os.path.join(data_path, f'train_v_full_{data_name}_w_cov.npy'))
+        weights = torch.as_tensor(np.abs(v)/np.sum(np.abs(v)), dtype=torch.double)
+        num_samples = weights.size(0)
+        sample_index = torch.multinomial(weights, num_samples, True)
+        self.data = self.data[sample_index]
+
+        self.train_len = len(self.data) // batch_size
+        self.pred_length = predict_length
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return self.train_len
+
+    def __getitem__(self, index):
+        if (index+1) <= self.train_len:
+            all_data = self.data[index*self.batch_size:(index+1)*self.batch_size].clone()
+        else:
+            all_data = self.data[index*self.batch_size:].clone()
+
+        cov = all_data[:, :, 1:]
+        label = all_data[:, :, 0]
+
+        split_start = len(label[0]) - self.pred_length + 1
+        data, label = split(split_start, label, cov, self.pred_length)
+
+        return data, label
+
+
+"""Single step testing dataloader for the hourly btc dataset"""
+class btcTestDataset(Dataset):
+    def __init__(self, data_path, data_name, predict_length):
+        self.data = np.load(os.path.join(data_path, f'test_data_full_{data_name}_w_cov.npy'))
+        self.v = np.load(os.path.join(data_path, f'test_v_full_{data_name}_w_cov.npy'))
+        self.test_len = self.data.shape[0]
+        self.pred_length = predict_length
+
+    def __len__(self):
+        return self.test_len
+
+    def __getitem__(self, index):
+        all_data = torch.from_numpy(self.data[index].copy())
+        cov = all_data[:, 1:]
+        data = all_data[:, 0]
+        v = float(self.v[index])
+        label = data * v
+
+        split_start = len(label) - self.pred_length + 1
+        all_data = []
+        for i in range(self.pred_length):
+            single_data = data[i:(split_start+i)].clone().unsqueeze(1)
+            single_data[-1] = -1
+            single_cov = cov[i:(split_start+i), :].clone()
+            single_data = torch.cat([single_data, single_cov], dim=1)
+            all_data.append(single_data)
+        all_data = torch.stack(all_data, dim=0)
+        label = label[-self.pred_length:]
+
+        return all_data, label, v
+
