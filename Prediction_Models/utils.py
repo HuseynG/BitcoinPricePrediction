@@ -332,6 +332,7 @@ class Trainer:
         print(f"Test MSE: {mse}, Test MAE: {mae}")
 
         # plotting
+        plt.figure(figsize=(12,6))
         plt.plot(y_true, label='True', linewidth=0.5)
         plt.plot(y_preds, label='Predicted', linewidth=0.5)
         plt.title("Model Per. on Test Set")
