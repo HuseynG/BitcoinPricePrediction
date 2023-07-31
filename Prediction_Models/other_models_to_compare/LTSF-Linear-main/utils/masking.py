@@ -24,3 +24,25 @@ class ProbMask():
     @property
     def mask(self):
         return self._mask
+
+
+class LogSparseMask():
+    def __init__(self, B, H, L_q, L_k, device="cpu"):
+        mask_shape = [B, H, L_q, L_k]
+        with torch.no_grad():
+            log_p = []
+            for i in range(14):
+                log_p.append(2 ** i)
+            self._mask = torch.ones(mask_shape, dtype=torch.bool).to(device)
+            for i in range(L_q):
+                self._mask[..., i, i] = False
+                for p in log_p:
+                    if i - p >= 0:
+                        self._mask[..., i, i - p] = False
+                for p in log_p:
+                    if i + p < L_k:
+                        self._mask[..., i, i + p] = False
+
+    @property
+    def mask(self):
+        return self._mask

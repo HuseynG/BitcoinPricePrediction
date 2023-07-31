@@ -1,6 +1,6 @@
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
-from models import Informer, Autoformer, Transformer, DLinear, Linear, NLinear
+from models import Informer, Autoformer, Transformer, DLinear, Linear, NLinear, Preformer
 from utils.tools import EarlyStopping, adjust_learning_rate, visual, test_params_flop
 from utils.metrics import metric
 
@@ -32,6 +32,7 @@ class Exp_Main(Exp_Basic):
             'DLinear': DLinear,
             'NLinear': NLinear,
             'Linear': Linear,
+            'Preformer': Preformer,
         }
         model = model_dict[self.args.model].Model(self.args).float()
 
@@ -360,10 +361,14 @@ class Exp_Main(Exp_Basic):
 
         return
     
-    def custom_predict(self, model_path):
+    def custom_predict(self, model_path, load_saved=True):
         pred_data, pred_loader = self._get_data(flag='custom_pred')
+    
+        if load_saved:
+            self.model.load_state_dict(torch.load(model_path))
+        else:
+            self.model = model_path
 
-        self.model.load_state_dict(torch.load(model_path))
         preds = []
         trues = []
 

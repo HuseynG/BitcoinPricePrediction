@@ -6,9 +6,16 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 import math
-from math import sqrt
-from utils.masking import TriangularCausalMask, ProbMask
+from math import sqrt, log
+# from math import log2
+from utils.masking import TriangularCausalMask, ProbMask, LogSparseMask
 import os
+import copy
+
+
+def clones(module, N):
+    "Produce N identical layers."
+    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
 
 class FullAttention(nn.Module):
@@ -429,7 +436,8 @@ class MultiScaleAttentionLayer(nn.Module):
         _, L_k, _ = keys.shape
         H = self.n_heads
         L_min = min(L_q, L_k)
-        scale_num = math.floor(log2(L_min // self.factor)) + 1
+        # scale_num = math.floor(log2(L_min // self.factor)) + 1 # for some reason log2 is not recognised so using log(x, 2) instead
+        scale_num = math.floor(log(L_min // self.factor, 2)) + 1
         attn_list = clones(self.inner_attention, scale_num-1)
         scale_weight = np.zeros(scale_num)
         for i in range(scale_num):
