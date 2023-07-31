@@ -9,3 +9,4 @@ models
 *.txt
 # except requirements.txt
 !requirements.txt
+Prediction_Models/other_models_to_compare/Preformer-main
