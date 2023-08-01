@@ -365,7 +365,10 @@ class Exp_Main(Exp_Basic):
         pred_data, pred_loader = self._get_data(flag='custom_pred')
     
         if load_saved:
-            self.model.load_state_dict(torch.load(model_path))
+            if not self.args.use_gpu:
+                self.model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+            else:
+                self.model.load_state_dict(torch.load(model_path))
         else:
             self.model = model_path
 
