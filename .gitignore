@@ -3,7 +3,8 @@
 *.pkl
 ExploringStuff
 data
-models
+Prediction_Models/models
+Prediction_Models/other_models_to_compare/LTSF-Linear-main/checkpoints
 *.pt
 *.pyc
 *.txt
