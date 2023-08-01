@@ -3,9 +3,7 @@ import plotly.graph_objs as go
 import requests
 import time
 from datetime import datetime, timedelta
-from utils import *
-# import numpy as np
-# import torch
+from helper_util import Train_Tester, get_btc_data, prep_btc_data_for_prediction
 
 
 def preditc_next():
@@ -20,7 +18,7 @@ def preditc_next():
     "pred_len": 1,
     "enc_in": 1,
     "individual": True,
-    "use_gpu": 1,
+    "use_gpu": 0,
     "batch_size": 1,
     "devices": "0,3",
     }
@@ -52,9 +50,7 @@ def main():
         close_data = [data['close'] for data in btc_data]
 
 
-        # Your prediction list
         preds = preditc_next()
-        # Add the prediction data as the last data point, 1 hour from now
         X_pred = [(datetime.fromtimestamp(end_time) + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')]
         open_data_pred = [preds[0]]
         high_data_pred = [preds[0]]
@@ -82,15 +78,12 @@ def main():
                                     increasing_line_color= '#d7fc03', 
                                     decreasing_line_color= '#fc7703'))
                                     
-        # Add a line trace for connecting last true data and first predicted data
-        # Define the colors for the line
+        # colors for the line
         up_color = '#d7fc03'
         down_color = '#fc7703'
         
-        # Get the color based on whether the prediction is higher or lower than the last real value
         line_color = up_color if float(close_data_pred[0]) > float(close_data[-1]) else down_color
         
-        # Add the line trace
         fig.add_trace(go.Scatter(x=[X[0], X_pred[0]], 
                                 y=[close_data[-1], close_data_pred[0]], 
                                 mode='lines',
@@ -121,5 +114,5 @@ def main():
         # updating the graph every 30 minutes (1800 seconds)
         time.sleep(1800)
 
-if __name__ == "main":
+if __name__ == "__main__":
     main()
