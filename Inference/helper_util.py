@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 
 from collections import namedtuple
-%matplotlib inline
+# %matplotlib inline
 import matplotlib.pyplot as plt
 import numpy as np
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
@@ -44,11 +44,11 @@ def get_btc_data(start_time, end_time, interval):
     results.reverse()
     return results
 
-def prep_btc_data_for_prediction(lookback):
+def prep_btc_data_for_prediction(lookback, pred_len = 1):
 
     # get btc data
     end_time = int(time.time())
-    start_time = end_time - ((int(lookback) + 1) * 60 * 60) # last 504 hours
+    start_time = end_time - ((int(lookback) + 1 + pred_len) * 60 * 60) # last 504 hours
     interval = 3600 # resolution (1 hour)
     btc_data = get_btc_data(start_time, end_time, interval)
 

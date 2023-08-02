@@ -6,16 +6,16 @@ from datetime import datetime, timedelta
 from helper_util import Train_Tester, get_btc_data, prep_btc_data_for_prediction
 
 
-def preditc_next():
+def NLinear_preditc_next12th():
     args_dict_test = {
     "root_path": "./",
     "data_path": "data.csv",
-    "model_id": "d_linear_btc_12_1_1_close_only",
-    "model": "DLinear",
+    "model_id": "n_linear_btc_12_12_12_close_only",
+    "model": "NLinear",
     "data": "custom",
     "seq_len": 12,
-    "label_len": 1,
-    "pred_len": 1,
+    "label_len": 12,
+    "pred_len": 12,
     "enc_in": 1,
     "individual": True,
     "use_gpu": 0,
@@ -23,23 +23,22 @@ def preditc_next():
     "devices": "0,3",
     }
 
-    preds, trues, mse, mae = Train_Tester(**args_dict_test).test("../Prediction_Models/other_models_to_compare/LTSF-Linear-main/checkpoints/d_linear_btc_12_1_1_close_only_DLinear_custom_ftMS_sl12_ll1_pl1_dm512_nh8_el2_dl1_df2048_fc1_ebtimeF_dtTrue_Exp_0/checkpoint.pth")
+    preds, trues, mse, mae = Train_Tester(**args_dict_test).test("../Prediction_Models/other_models_to_compare/LTSF-Linear-main/checkpoints/n_linear_btc_12_12_12_close_only_NLinear_custom_ftMS_sl12_ll12_pl12_dm512_nh8_el2_dl1_df2048_fc1_ebtimeF_dtTrue_Exp_0/checkpoint.pth")
     preds = preds.flatten().tolist()
-    # print("Preds form predict next", preds)
-    return preds
-
+    preds_12th_and_last_12 = preds[::12] + preds[-12:]  # get every 12th prediction and the last 12 predictions
+    return preds_12th_and_last_12
 
 
 def main():
     st.title('Live BTC data')
-
     # creating a placeholder for the graph
     chart = st.empty()
 
     while True:
-        prep_btc_data_for_prediction(12) # for prediction
+        lookback = 504 * 2 # weeks
+        
         end_time = int(time.time())
-        start_time = end_time - (12 * 60 * 60)
+        start_time = end_time - (lookback * 60 * 60)
         interval = 3600
         btc_data = get_btc_data(start_time, end_time, interval)
 
@@ -49,15 +48,13 @@ def main():
         low_data = [data['low'] for data in btc_data]
         close_data = [data['close'] for data in btc_data]
 
-
-        preds = preditc_next()
-        X_pred = [(datetime.fromtimestamp(end_time) + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')]
-        open_data_pred = [preds[0]]
-        high_data_pred = [preds[0]]
-        low_data_pred = [preds[0]]
-        close_data_pred = [preds[0]]
-
-        # creating a Plotly figure with two traces
+        # predictions from the NLinear_preditc_next12th model
+        prep_btc_data_for_prediction(lookback, pred_len = 12) # for prediction
+        preds_12th = NLinear_preditc_next12th()
+        preds_12th = preds_12th[::-1]
+        X_pred_12th = [(datetime.fromtimestamp(end_time) + timedelta(hours=i-(lookback))).replace(minute=0, second=0).strftime('%Y-%m-%d %H:%M:%S') for i in range(len(preds_12th))]
+        close_data_pred_12th = preds_12th
+        # creating a Plotly figure with three traces
         fig = go.Figure()
 
         fig.add_trace(go.Candlestick(x=X,
@@ -68,28 +65,14 @@ def main():
                                     name='actual',
                                     increasing_line_color= 'green', 
                                     decreasing_line_color= 'red'))
-        
-        fig.add_trace(go.Candlestick(x=X_pred,
-                                    open=open_data_pred,
-                                    high=high_data_pred,
-                                    low=low_data_pred,
-                                    close=close_data_pred,
-                                    name='predicted',
-                                    increasing_line_color= '#d7fc03', 
-                                    decreasing_line_color= '#fc7703'))
-                                    
-        # colors for the line
-        up_color = '#d7fc03'
-        down_color = '#fc7703'
-        
-        line_color = up_color if float(close_data_pred[0]) > float(close_data[-1]) else down_color
-        
-        fig.add_trace(go.Scatter(x=[X[0], X_pred[0]], 
-                                y=[close_data[-1], close_data_pred[0]], 
-                                mode='lines',
-                                line=dict(color=line_color),
-                                showlegend=False))
 
+        fig.add_trace(go.Scatter(x=X_pred_12th,
+                         y=close_data_pred_12th,
+                         mode='lines',
+                         line=dict(color='yellow'),
+                         name='12th time point prediction',
+                         showlegend=True))
+                         
 
         fig.update_layout(
             autosize=True,
