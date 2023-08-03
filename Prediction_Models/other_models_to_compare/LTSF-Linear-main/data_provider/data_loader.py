@@ -522,6 +522,6 @@ class Dataset_Custom_Pred(Dataset):
             # data[:, -1] = data_last_col_inv_transformed.ravel()  # replace the last column with the inverse transformed data
             return data_last_col_inv_transformed
         else:  # if there is only one feature
-            print("shape of data: (1 feature) before returning", data.shape)
+            # print("shape of data: (1 feature) before returning", data.shape)
             return self.target_scaler.inverse_transform(data)
 
