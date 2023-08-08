@@ -49,8 +49,11 @@ def main():
     with open('../data/top_feattures.pkl', 'wb') as file:
         pickle.dump(top_feattures, file)
     
-    ### Hyperparameter Tuning (Structural Tuning Too) for Close Col ###
-    best = optimizer.optimize(space, ["close"])
+    ### Hyperparameter Tuning (Structural Tuning Too) for Top Features ###
+    with open('../data/top_feattures.pkl', 'rb') as file:
+        top_feattures = pickle.load(file)
+    top_feattures.append("close")
+    best = optimizer.optimize(space, top_feattures)
     print(best)
     with open('../data/best_on_hyperparam_for_top_Feature_Combo_vanilla_transformer_hourly.pkl', 'wb') as file:
         pickle.dump(best, file)
