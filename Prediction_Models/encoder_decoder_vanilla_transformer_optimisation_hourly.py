@@ -8,7 +8,7 @@ import pickle
 def main():
     seed_everything()
     ##### Vanilla Transformer (Next Step Prediction | Encoder Decoder) ######
-    ### Hyperparameter Tuning (Structural Tuning Too) for Top Features ###
+    ### Hyperparameter Tuning (Structural Tuning Too) for Close Col ###
     optimizer = HyperParamOptimizer("../data/Final_data_hourly.csv", "VanillaTimeSeriesTransformer")
     space = {
         'num_layers': scope.int(hp.quniform('num_layers', 1, 8, 1)),
@@ -21,10 +21,7 @@ def main():
         'lr': hp.loguniform('lr', np.log(0.0001), np.log(0.1))
     }
 
-    with open('../data/top_feattures.pkl', 'rb') as file:
-        top_feattures = pickle.load(file)
-    top_feattures.append("close")
-    best = optimizer.optimize(space, top_feattures)
+    best = optimizer.optimize(space, ["close"])
     print(best)
     with open('../data/best_on_hyperparam_for_top_Feature_Combo_vanilla_transformer_w_decoder_hourly.pkl', 'wb') as file:
         pickle.dump(best, file)
