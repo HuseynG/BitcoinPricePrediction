@@ -4,6 +4,18 @@ import math
 
 # positional encoding
 class PE(nn.Module):
+    """
+    Positional Encoding (PE) module for adding positional information to embeddings in vanilla Transformer models.
+
+    Attributes:
+    - dropout (nn.Module): Dropout layer to be applied on the output.
+    - pe (Tensor): Positional encoding matrix.
+
+    Parameters:
+    - d_model (int): The dimension of the embeddings.
+    - dropout_rate (float, optional): Dropout probability. Defaults to 0.1.
+    - max_len (int, optional): Maximum sequence length for which positional encoding is pre-computed. Defaults to 5000.
+    """
     def __init__(self, d_model, dropout_rate=0.1, max_len=5000):
         super(PE, self).__init__() # calling nn.Module constructor
 
@@ -35,6 +47,40 @@ class PE(nn.Module):
 
 
 class VanillaTimeSeriesTransformer_EncoderOnly(nn.Module):
+    """
+    Implementation of a vanilla Transformer encoder-only model tailored for time-series data.
+    
+    This model consists of:
+    - Embedding layer to map features to a higher-dimensional space.
+    - Positional encoding to capture sequence order.
+    - Multiple Transformer encoder layers.
+    - A multi-layer perceptron (MLP) to produce the final output.
+    
+    Attributes:
+    - num_features (int): Number of features in the input data.
+    - d_model (int): Dimension of the model/embedding.
+    - num_layers (int): Number of Transformer encoder layers.
+    - num_heads (int): Number of attention heads.
+    - dff (int): Depth of the feed-forward network inside the Transformer.
+    - dropout_rate (float): Dropout rate used within the Transformer.
+    - mlp_size (int): Size of the intermediate layer in the MLP.
+    - mlp_dropout_rate (float): Dropout rate used in the MLP.
+    - embedding (nn.Module): Linear layer used for embedding the input features.
+    - pos_encoding (PE): Positional encoding module.
+    - transformer_encoder (nn.Module): The Transformer encoder.
+    - mlp (nn.Sequential): Multi-layer perceptron used at the end of the model.
+
+    Parameters:
+    **kwargs: Keyword arguments including:
+        - num_features (int): Mandatory argument specifying number of input features.
+        - d_model (int, optional): Dimension of model/embedding. Default is 64.
+        - num_layers (int, optional): Number of Transformer encoder layers. Default is 6.
+        - num_heads (int, optional): Number of attention heads. Default is 8.
+        - dff (int, optional): Depth of feed-forward network in Transformer. Default is 1024.
+        - dropout_rate (float, optional): Dropout rate for Transformer. Default is 0.2.
+        - mlp_size (int, optional): Size of intermediate layer in MLP. Default is 64.
+        - mlp_dropout_rate (float, optional): Dropout rate for MLP. Default is 0.2.
+    """
     def __init__(self, **kwargs):
         super(VanillaTimeSeriesTransformer_EncoderOnly, self).__init__()
         print("model name is ","VanillaTimeSeriesTransformer_EncoderOnly")
@@ -88,6 +134,45 @@ class VanillaTimeSeriesTransformer_EncoderOnly(nn.Module):
         return x
     
 class VanillaTimeSeriesTransformer(nn.Module):
+     """
+    Implementation of a vanilla Transformer model tailored for time-series data, including both encoder and decoder parts.
+    
+    This model consists of:
+    - Embedding layers for both encoder and decoder parts.
+    - Positional encoding to capture sequence order.
+    - Multiple Transformer encoder layers to encode the input sequences.
+    - Multiple Transformer decoder layers to decode the encoded sequences.
+    - A multi-layer perceptron (MLP) to produce the final output.
+    
+    Attributes:
+    - num_features (int): Number of features in the input data.
+    - d_model (int): Dimension of the model/embedding.
+    - teacher_forcing_ratio (float): Probability of using the ground truth as next input during training.
+    - num_layers (int): Number of Transformer layers for both encoder and decoder.
+    - num_heads (int): Number of attention heads.
+    - dff (int): Depth of the feed-forward network inside the Transformer.
+    - dropout_rate (float): Dropout rate used within the Transformer.
+    - mlp_size (int): Size of the intermediate layer in the MLP.
+    - mlp_dropout_rate (float): Dropout rate used in the MLP.
+    - embedding (nn.Module): Linear layer used for embedding the input features for the encoder.
+    - decoder_embedding (nn.Module): Linear layer used for embedding the output features for the decoder.
+    - pos_encoding (PE): Positional encoding module.
+    - transformer_encoder (nn.Module): The Transformer encoder.
+    - transformer_decoder (nn.Module): The Transformer decoder.
+    - mlp (nn.Sequential): Multi-layer perceptron used at the end of the model.
+
+    Parameters:
+    **kwargs: Keyword arguments including:
+        - num_features (int): Mandatory argument specifying number of input features.
+        - d_model (int, optional): Dimension of model/embedding. Default is 64.
+        - teacher_forcing_ratio (float, optional): Probability of using ground truth as next input. Default is 0.5.
+        - num_layers (int, optional): Number of Transformer layers for encoder and decoder. Default is 6.
+        - num_heads (int, optional): Number of attention heads. Default is 8.
+        - dff (int, optional): Depth of feed-forward network in Transformer. Default is 1024.
+        - dropout_rate (float, optional): Dropout rate for Transformer. Default is 0.2.
+        - mlp_size (int, optional): Size of intermediate layer in MLP. Default is 64.
+        - mlp_dropout_rate (float, optional): Dropout rate for MLP. Default is 0.2.
+    """
     def __init__(self, **kwargs):
         super(VanillaTimeSeriesTransformer, self).__init__()
         print("model name is ","VanillaTimeSeriesTransformer")

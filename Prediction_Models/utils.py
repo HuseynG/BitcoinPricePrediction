@@ -19,6 +19,16 @@ from hyperopt import fmin, tpe, Trials, STATUS_OK
 from transformer import VanillaTimeSeriesTransformer_EncoderOnly, VanillaTimeSeriesTransformer
 
 def seed_everything(seed=123):
+    """
+    This function sets the seed for random number generation in the `os`, `random`, `numpy`, 
+    and `torch` libraries. It also makes CUDA's CUDNN backend deterministic.
+
+    Note: It should be noted that while this guarantees reproducibility for some operations, 
+    CUDA operations that use non-deterministic algorithms may still not be reproducible.
+
+    Parameters:
+    - seed (int, optional): The seed value for random number generation. Default is 123.
+    """
     os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
@@ -27,6 +37,19 @@ def seed_everything(seed=123):
     torch.backends.cudnn.deterministic = True
 
 def normalize(df, cols_to_scale, close_col):
+    """
+    Normalises the specified columns of a DataFrame using the MinMaxScaler.
+
+    Parameters:
+    - df (pd.DataFrame): The input DataFrame containing the columns to be scaled.
+    - cols_to_scale (list of str): The names of the columns in the DataFrame that need to be scaled using the general scaler.
+    - close_col (str): The name of the specific column to be scaled using a dedicated scaler.
+
+    Returns:
+    - df_scaled (pd.DataFrame): A DataFrame with the specified columns scaled.
+    - scaler_general (MinMaxScaler): The MinMaxScaler instance used to scale the general columns.
+    - scaler_close (MinMaxScaler): The MinMaxScaler instance used to scale the close_col.
+    """
     # instantiating two separate scalers
     scaler_general = MinMaxScaler()
     scaler_close = MinMaxScaler()
@@ -41,6 +64,22 @@ def normalize(df, cols_to_scale, close_col):
     return df_scaled, scaler_general, scaler_close
 
 def create_sequence_of_data(data, input_seq_len, output_seq_len=1, y_col='close', output_as_seq=True):
+    """
+    Creates sequences of input and output data from a given DataFrame for sequence-to-sequence tasks.
+
+    Parameters:
+    - data (pd.DataFrame): The input DataFrame from which sequences will be generated.
+    - input_seq_len (int): The length of the input sequences to be generated.
+    - output_seq_len (int, optional): The length of the output sequences to be generated. Default is 1.
+    - y_col (str, optional): The name of the column in the DataFrame that will serve as the target output. Default is 'close'.
+    - output_as_seq (bool, optional): If True, the output sequences will be continuous sequences of length output_seq_len.
+                                     If False, the output will be a single time step taken output_seq_len steps after the input sequence.
+                                     Default is True.
+
+    Returns:
+    - Xs (np.array): Feature sequences.
+    - Ys (np.array): Target sequences.
+    """
     Xs = []
     Ys = []
 
@@ -63,6 +102,18 @@ def create_sequence_of_data(data, input_seq_len, output_seq_len=1, y_col='close'
     return np.array(Xs), np.array(Ys)
 
 def split_data(X, y, train_frac=0.9, val_frac=0.05):
+    """
+    Splits data into training, validation, and test sets.
+
+    Parameters:
+    - X (np.array): Feature data.
+    - y (np.array): Target data.
+    - train_frac (float): Fraction for training set. Default: 0.9.
+    - val_frac (float): Fraction for validation set. Default: 0.05.
+
+    Returns:
+    - Tuple: X_train, X_val, X_test, y_train, y_val, y_test.
+    """
     # indices for the split
     train_index = int(len(X) * train_frac)
     val_index = int(len(X) * (train_frac + val_frac))
@@ -74,6 +125,19 @@ def split_data(X, y, train_frac=0.9, val_frac=0.05):
     return X_train, X_val, X_test, y_train, y_val, y_test
 
 def preprocess_data(df, batch_size = 32, input_seq_len=24, output_seq_len=1, output_as_seq=False):
+    """
+    Preprocesses a dataframe for time series modeling and returns dataloaders and scalers.
+
+    Parameters:
+    - df (pd.DataFrame): Original data.
+    - batch_size (int): Size of batch for training. Default: 32.
+    - input_seq_len (int): Length of input sequence. Default: 24.
+    - output_seq_len (int): Length of output sequence. Default: 1.
+    - output_as_seq (bool, optional): If output should be returned as a sequence. Default: False.
+
+    Returns:
+    - Tuple: scaled_df, general scaler, close column scaler, train dataloader, validation dataloader, test dataloader.
+    """
     scaled_df, scaler_general, scaler_close = normalize(df, list(df.columns.drop(["close"])), "close")
     X, y = create_sequence_of_data(scaled_df, input_seq_len, output_seq_len, output_as_seq=output_as_seq)
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(X, y)
@@ -105,6 +169,25 @@ def preprocess_data(df, batch_size = 32, input_seq_len=24, output_seq_len=1, out
 
 
 class HyperParamOptimizer:
+    """
+    Optimise hyperparameters and find top features for a given model using a specified dataset.
+
+    Attributes:
+    - df: DataFrame containing the data.
+    - input_seq_len: Input sequence length for model training.
+    - output_seq_len: next ith data point to predict for model training.
+    - batch_size: Batch size for training.
+    - temp_df: Temporary DataFrame, a subset of df.
+    - cuda_: Device specification ('cuda:X' or 'cpu').
+    - model_name: Name of the model to be optimized.
+
+    Methods:
+    - objective(params): Evaluate model using specified parameters and return validation loss.
+    - optimize(space, df_features, max_evals=100): Optimize hyperparameters over a specified search space.
+    - find_top_features(best): Train and test a model using the best hyperparameters to find the top contributing 
+    features based on performance metrics (i.e., MSE).
+    """
+
     def __init__(self, data_file, model_name, input_seq_len=36, output_seq_len=1, batch_size=256, cuda_='cuda:3'):
         
         self.df = pd.read_csv(data_file)
@@ -248,6 +331,36 @@ class HyperParamOptimizer:
         return stats
 
 class Trainer:
+    """
+    A utility class for training, validating, and testing a given PyTorch model.
+
+    Attributes:
+    - model: PyTorch model to be trained.
+    - train_dataloader: DataLoader for the training dataset.
+    - val_dataloader: DataLoader for the validation dataset.
+    - test_dataloader: DataLoader for the testing dataset.
+    - criterion: Loss function used during training and validation.
+    - optimiser: Optimiser for updating the model's weights.
+    - scheduler: Scheduler for learning rate adjustment.
+    - device: Device ('cpu' or 'cuda') to train and evaluate the model.
+    - num_epochs: Number of training epochs.
+    - early_stopping_patience_limit: Number of epochs with no improvement on validation loss after which training stops.
+    - early_stopping_patience_counter: Counter to track epochs without improvement.
+    - best_val_loss: Best validation loss (MSE) observed during training.
+    - best_val_mae: Best Mean Absolute Error observed during validation.
+    - is_save_model: Whether to save the best model during training based on validation performance.
+    - scaler: Scaler instance for inverse scaling during testing (if data was scaled).
+    - file_path: Path where the best model should be saved or loaded from.
+    - is_teacher_forcing: Indicates if teacher forcing is used during training.
+
+    Methods:
+    - train_model(): Train the model for one epoch on the training dataset and return training loss.
+    - validate_model(): Evaluate the model on the validation dataset to get the MSE and MAE.
+    - test_model(): Evaluate the model on the test dataset, print and plot the MSE, MAE, and predicted vs. true values.
+    - check_early_stopping(vals, is_mae=False): Check the early stopping condition based on validation performance.
+    - _plot_losses(): (Internal) Plot training and validation losses.
+    - train_loop(): Run the training process, handle validation, early stopping, and plotting.
+    """
 
     def __init__(self, **kwargs):
         self.model = kwargs.get('model')
