@@ -4,7 +4,6 @@ import pandas as pd
 import torch
 
 from collections import namedtuple
-# %matplotlib inline
 import matplotlib.pyplot as plt
 import numpy as np
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
@@ -12,7 +11,7 @@ from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 import sys
 sys.path.append('../Prediction_Models/other_models_to_compare/LTSF-Linear-main')
 from exp.exp_main import Exp_Main
-# from exp.exp_main import Exp_Main
+
 
 def get_btc_data(start_time, end_time, interval):
     total_call_count = 1
@@ -60,6 +59,18 @@ def prep_btc_data_for_prediction(lookback, pred_len = 1):
     temp_df.to_csv('data.csv', index=False)
 
 class Train_Tester:
+    """
+    Train_Tester: Manages initialization, training, validation, and visualization for trained LTSF-Linear models.
+
+    Methods:
+    - _plot(trues, preds): Internal method to plot true vs predicted values.
+    - _set_args(): Set the arguments for training, validation, and testing.
+    - train(): Configures the model parameters and trains the Preformer model.
+    - validate(model): Validates the trained model and calculates error metrics.
+    - test(model): Sets up and conducts testing for the model, evaluates performance, and visualizes predictions.
+
+    Note: Attributes are the same available at ./run_longExp.py
+    """
     def __init__(self, **kwargs):
 
         self.is_training = kwargs.get('is_training', 1)
