@@ -134,7 +134,7 @@ class VanillaTimeSeriesTransformer_EncoderOnly(nn.Module):
         return x
     
 class VanillaTimeSeriesTransformer(nn.Module):
-     """
+    """
     Implementation of a vanilla Transformer model tailored for time-series data, including both encoder and decoder parts.
     
     This model consists of:
