@@ -25,17 +25,17 @@ def NLinear_preditc_next12th():
 
     preds, trues, mse, mae = Train_Tester(**args_dict_test).test("../Prediction_Models/other_models_to_compare/LTSF-Linear-main/checkpoints/n_linear_btc_12_12_12_close_only_NLinear_custom_ftMS_sl12_ll12_pl12_dm512_nh8_el2_dl1_df2048_fc1_ebtimeF_dtTrue_Exp_0/checkpoint.pth")
     preds = preds.flatten().tolist()
-    preds_12th_and_last_12 = preds[::12] + preds[-12:]  # get every 12th prediction and the last 12 predictions
-    return preds_12th_and_last_12
+    return preds
 
 
 def main():
     st.title('Live BTC data')
     # creating a placeholder for the graph
     chart = st.empty()
-
+    window_num = 7
+    window_size = 24
     while True:
-        lookback = 504 * 2 # weeks
+        lookback = window_size * window_num # days
         
         end_time = int(time.time())
         start_time = end_time - (lookback * 60 * 60)
@@ -49,12 +49,17 @@ def main():
         close_data = [data['close'] for data in btc_data]
 
         # predictions from the NLinear_preditc_next12th model
-        prep_btc_data_for_prediction(lookback, pred_len = 12) # for prediction
-        preds_12th = NLinear_preditc_next12th()
-        preds_12th = preds_12th[::-1]
-        X_pred_12th = [(datetime.fromtimestamp(end_time) + timedelta(hours=i-(lookback))).replace(minute=0, second=0).strftime('%Y-%m-%d %H:%M:%S') for i in range(len(preds_12th))]
-        close_data_pred_12th = preds_12th
-        # creating a Plotly figure with three traces
+        prep_btc_data_for_prediction(lookback, pred_len = 0) # for prediction
+        preds = NLinear_preditc_next12th()
+        # print(f"predictions len {len(preds)}")
+        
+        next_ith = 1
+        next_ith_ = next_ith
+        next_ith = abs(next_ith - 13) # this is because the ordering is in reverse 1 means 12th and 12th index mean the next item 
+        preds = preds[:(window_size*window_num*next_ith):next_ith] 
+        X_preds = [(datetime.fromtimestamp(end_time) + timedelta(hours=i-(lookback)+13-next_ith_)).replace(minute=0, second=0).strftime('%Y-%m-%d %H:%M:%S') for i in range(len(preds))]
+        # print(f"X: {len(X)}, X_preds: {len(X_preds)}")
+
         fig = go.Figure()
 
         fig.add_trace(go.Candlestick(x=X,
@@ -66,11 +71,11 @@ def main():
                                     increasing_line_color= 'green', 
                                     decreasing_line_color= 'red'))
 
-        fig.add_trace(go.Scatter(x=X_pred_12th,
-                         y=close_data_pred_12th,
+        fig.add_trace(go.Scatter(x=X_preds,
+                         y=preds,
                          mode='lines',
                          line=dict(color='yellow'),
-                         name='12th time point prediction',
+                         name='Next Step Prediction',
                          showlegend=True))
                          
 

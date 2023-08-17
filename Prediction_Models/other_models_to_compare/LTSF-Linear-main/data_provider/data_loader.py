@@ -406,7 +406,7 @@ class Dataset_Pred(Dataset):
 class Dataset_Custom_Pred(Dataset):
     def __init__(self, root_path, flag='custom_pred', size=None,
                  features='S', data_path='ETTh1.csv',
-                 target='close', scale=True, inverse=False, timeenc=0, freq='15min', cols=None, train_only=False):
+                 target='close', scale=True, inverse=False, timeenc=0, freq='60min', cols=None, train_only=False):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -447,7 +447,7 @@ class Dataset_Custom_Pred(Dataset):
         if self.features == 'S':
             cols.remove(self.target)
         border1 = 0
-        border2 = len(df_raw) - self.pred_len
+        border2 = len(df_raw)
 
         if self.features == 'M' or self.features == 'MS':
             df_raw = df_raw[['date'] + cols]
@@ -467,10 +467,11 @@ class Dataset_Custom_Pred(Dataset):
         tmp_stamp = df_raw[['date']][border1:border2]
         tmp_stamp['date'] = pd.to_datetime(tmp_stamp.date)
         pred_dates = pd.date_range(tmp_stamp.date.values[-1], periods=self.pred_len + 1, freq=self.freq)
-
+        # print(f"pred_dates: {pred_dates}")
         df_stamp = pd.DataFrame(columns=['date'])
         df_stamp.date = list(tmp_stamp.date.values) + list(pred_dates[1:])
         self.future_dates = list(pred_dates[1:])
+        # print(f"future_dates: {self.future_dates}")
         if self.timeenc == 0:
             df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
             df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)

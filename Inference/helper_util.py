@@ -56,6 +56,7 @@ def prep_btc_data_for_prediction(lookback, pred_len = 1):
     temp_df['date'] = pd.to_datetime(temp_df['timestamp'], unit='s')
     temp_df.drop(columns=['timestamp'], inplace=True)
     temp_df = temp_df[['date'] + [col for col in temp_df.columns if col != 'date' and col != 'close'] + ['close']] # last col is target col
+    temp_df = temp_df.sort_values(by='date', ascending=True)
     temp_df.to_csv('data.csv', index=False)
 
 class Train_Tester:
