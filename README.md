@@ -1,8 +1,97 @@
-# Bitcoin_Project
-This repository contains the scripts for Dissertation Project (MSc AI - QMUL).
+# The Efficacy of NLinear Neural Network Over the Performer, a Transformer Variant: A Study in Bitcoin Price Prediction
+This repository contains the scripts for Dissertation Project (MSc AI - QMUL). Data_Collection and Data_Preparation includes script to collect and prepare data. For model training and testing please refer to Prediction_Models directory. The sub-directory called "other_models_to_compare" in Prediction_Models contains the scripts and original source code for LTSF_Linear and Preformer. Lastly, you can refer to Inferecne directory to run the streamlit app predicting Bitcoin's next hour price.
 
-Directories:
-* Data_Collection
-* Data_Preparation
-* Prediction_Models
-* Inference
+Direcotries: 
+```.
+├── Data_Collection
+│   ├── BTC_Price_Data_Collection_Bitstamp.ipynb
+│   ├── Glassnode_24h_Data-2012-2023.csv
+│   ├── Glassnode_Data_Collection.ipynb
+│   ├── Indices_Commodities_Inflation_Interest_rates.ipynb
+│   ├── Sentiment_Data_Collection_Crypto.ipynb
+│   ├── Sentiment_Data_Collection_FX.ipynb
+│   ├── Sentiment_Data_Collection_Stock.ipynb
+│   ├── btc_data.csv
+│   ├── combined_usa_rates_2012-2023.csv
+│   ├── daily_btc_data.csv
+│   ├── indices_commodoties_2012-2023.csv
+│   ├── raw_news_sentiment_BTC_ETH.pkl
+│   ├── raw_news_sentiment_all_stock.pkl
+│   └── raw_news_sentiment_general_fx.pkl
+├── Data_Preparation
+│   ├── Data_Cleaning.ipynb
+│   ├── Data_Preprocessing.ipynb
+│   ├── Data_Preprocessing_hourly.ipynb
+│   ├── Final_data_daily.csv
+│   ├── Final_data_hourly.csv
+│   ├── daily_news_sentiments.csv
+│   ├── glassnode_data.csv
+│   └── indices_rates_commodoties.csv
+├── Inference
+│   ├── app.py
+│   ├── data.csv
+│   └── helper_util.py
+├── LICENSE
+├── Prediction_Models
+│   ├── encoder_decoder_vanilla_transformer_optimisation_hourly.py
+│   ├── encoder_only_vanilla_transformer_optimisation_hourly.py
+│   ├── models
+│   ├── other_models_to_compare
+│   ├── transformer.py
+│   ├── utils.py
+│   └── vanilla_transformer_experiments_hourly.ipynb
+├── README.md
+├── data
+│   ├── Final_data_daily.csv
+│   ├── Final_data_hourly.csv
+│   ├── _1m_training_data_close_col_only_for_other_models.csv
+│   ├── best_on_hyperparam_for_top_Feature_Combo_vanilla_transformer_hourly.pkl
+│   ├── best_on_hyperparam_for_top_Feature_Combo_vanilla_transformer_w_decoder_hourly.pkl
+│   ├── btc_data.csv
+│   ├── stats_on_features_vanilla_transformer_hourly.pkl
+│   ├── stats_on_hyperparam_for_two_cols_vanilla_transformer_hourly_encoder_only.pkl
+│   ├── testing_data_close_col_only_for_other_models.csv
+│   ├── testing_data_top_features_for_other_models.csv
+│   ├── top_feattures.pkl
+│   ├── training_data_close_col_only_for_other_models.csv
+│   ├── training_data_top_features_for_other_models.csv
+│   ├── validation_data_close_col_only_for_other_models.csv
+│   └── validation_data_top_features_for_other_models.csv
+├── environment.yml
+└── requirements.txt
+```
+
+To avoid repetition Preformer model is integrated to LTSF_Linear source code (LTSF-Linear-main). In addtion, the following scripts are added to LTSF-Linear-main directory:
+  - preformer_hyper_parameter_tuning.py
+  - preformer_models_btc_data.ipynb
+  - train_linear_models_btc_data.ipynb
+  - test_linear_models_btc_data.ipynb
+
+Contents of /Bitcoin_Project_final/Prediction_Models/other_models_to_compare/LTSF-Linear-main:
+```.
+├── FEDformer
+├── LICENSE
+├── LTSF-Benchmark.md
+├── Pyraformer
+├── README.md
+├── checkpoints
+├── data_provider
+├── environment.yml
+├── exp
+├── layers
+├── logs
+├── models
+├── pics
+├── preformer_hyper_parameter_tuning.py
+├── preformer_models_btc_data.ipynb
+├── requirements.txt
+├── results
+├── run_longExp.py
+├── run_stat.py
+├── scripts
+├── test_linear_models_btc_data.ipynb
+├── test_results
+├── train_linear_models_btc_data.ipynb
+├── utils
+└── weight_plot.py
+```
