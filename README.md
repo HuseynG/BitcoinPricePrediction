@@ -2,7 +2,7 @@
 
 <img width="897" alt="Screenshot 2023-08-20 at 21 15 36" src="https://github.com/HuseynG/Bitcoin_Project/assets/64325152/384abe71-6313-4cf2-a2f2-9fbf4968e1a8">
 
-This repository contains the scripts for Dissertation Project (MSc AI - QMUL). Data_Collection and Data_Preparation includes script to collect and prepare data. For model training and testing please refer to Prediction_Models directory. The sub-directory called "other_models_to_compare" in Prediction_Models contains the scripts and original source code for LTSF_Linear and Preformer. Lastly, you can refer to Inferecne directory to run the streamlit app predicting Bitcoin's next hour price.
+This repository contains the scripts for dissertation project as part of EECS MSc Project (ECS750P) module (MSc AI - QMUL). Data_Collection and Data_Preparation directories includes script to collect and prepare data. For model training and testing please refer to Prediction_Models directory. The sub-directory called "other_models_to_compare" in Prediction_Models contains the scripts and original source code for LTSF_Linear and Preformer. Lastly, you can refer to Inference directory to run the streamlit app predicting Bitcoin's next hour price similar to the figure above.
 
 Direcotries: 
 ```.
