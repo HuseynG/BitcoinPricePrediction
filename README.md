@@ -98,7 +98,7 @@ Direcotries:
 ├── utils
 └── weight_plot.py
 ```
-### Result
+### Results
 #### Performance of the NLinear model on predicting Bitcoin's next closing price using a 12/1 I/O setting, trained exclusively on Bitcoin close prices:
 <img width="860" alt="Screenshot 2023-08-20 at 21 17 12" src="https://github.com/HuseynG/Bitcoin_Project/assets/64325152/c9e5c71f-9813-4af0-b53e-85f3bb1d465b">
 
