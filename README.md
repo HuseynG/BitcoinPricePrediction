@@ -117,7 +117,7 @@ You can download full project source code, prepared dataset, trained models, and
 
 ### Step 0: Prerequisites & Environment Setup
 - NVIDIA GPU is required with minimum VRAM of 8Gb. 
-- Anaconda or Mini Conda is available
+- Anaconda or Mini Conda is required.
 #### Setting Up Environments
 ##### Setting Up Main Environment: bitcoinproject1
   1. Navigate to the project root directory where environment.yml file exists
@@ -126,7 +126,7 @@ You can download full project source code, prepared dataset, trained models, and
   3. Activate the newly created environment: 
   ```conda activate bitcoinproject1```
 
-#### Setting Up Main Environment: LTSF_Linear
+##### Setting Up Main Environment: LTSF_Linear
   1. Navigate to the Bitcoin_Project_final/Prediction_Models/other_models_to_compare/LTSF-Linear-main/ directory where environment.yml exists
   2. Create a conda environment using the environment.yml file: 
   ```conda env create -f environment.yml```
@@ -139,7 +139,7 @@ Note: You might need to modify prefix in environment.yml files accordingly.
 Navigate to Data_Collection directory:
 - To collect Bitcoin OHCL data run the script called "BTC_Price_Data_Collection_Bitstamp.ipynb"
 - To collect Glassnode data run the script called "Glassnode_Data_Collection.ipynb"
-- To collect sentiment data run the following scripts: Sentiment_Data_Collection_Crypto.ipynb, Sentiment_Data_Collection_FX.ipynb, Sentiment_Data_Collection_Stock.ipynb
+- To collect sentiment data run the following scripts: Sentiment_Data_Collection_Crypto.ipynb, Sentiment_Data_Collection_FX.ipynb, and Sentiment_Data_Collection_Stock.ipynb
 - Lastly, to collect commodities and inflation rates run Indices_Commodities_Inflation_Interest_rates.ipynb notebook.
 
 Note: Some of these scripts require API key/token. Make sure you provide and paste your keys/tokens properly into the scripts.
@@ -178,7 +178,7 @@ Navigate to Prediction_Models/other_models_to_compare/LTSF-Linear-main directory
 - train_linear_models_btc_data.ipynb
 - test_linear_models_btc_data.ipynb
 
-### Step 5: Running Streamlit Applications (Predicting next hour's Bitcoin close price)
+### Step 5: Running Streamlit Demo Application (Predicting next hour's Bitcoin close price)
 If you would like to run the demo Streamlit application, activate the LTSF_Linear environment. Next, make sure you have installed the Streamlit python package properly. You can install it using the following command:
 
   ```pip install streamlit```
