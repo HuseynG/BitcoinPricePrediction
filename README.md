@@ -112,3 +112,77 @@ Direcotries:
 <img width="1076" alt="Screenshot 2023-08-20 at 21 23 45" src="https://github.com/HuseynG/Bitcoin_Project/assets/64325152/e9867153-c96a-4f8c-bb8c-36dc55fc7154">
 
 
+## Instructions to run scripts:
+You can download full project source code, prepared dataset, trained models, and project paper from the following Link: https://qmulprod-my.sharepoint.com/:f:/r/personal/ec22344_qmul_ac_uk/Documents/Dissertation_Contents_Shared?csf=1&web=1&e=DL0qJ0
+
+### Step 0: Prerequisites & Environment Setup
+- NVIDIA GPU is required with minimum VRAM of 8Gb. 
+- Anaconda or Mini Conda is available
+#### Setting Up Environments
+##### Setting Up Main Environment: bitcoinproject1
+  1. Navigate to the project root directory where environment.yml file exists
+  2. Create a conda environment using the environment.yml file: 
+  ```conda env create -f environment.yml```
+  3. Activate the newly created environment: 
+  ```conda activate bitcoinproject1```
+
+#### Setting Up Main Environment: LTSF_Linear
+  1. Navigate to the Bitcoin_Project_final/Prediction_Models/other_models_to_compare/LTSF-Linear-main/ directory where environment.yml exists
+  2. Create a conda environment using the environment.yml file: 
+  ```conda env create -f environment.yml```
+  3. Activate the newly created environment: 
+  ```conda activate LTSF_Linear```
+
+Note: You might need to modify prefix in environment.yml files accordingly. 
+
+### Step 1: Data Collection
+Navigate to Data_Collection directory:
+- To collect Bitcoin OHCL data run the script called "BTC_Price_Data_Collection_Bitstamp.ipynb"
+- To collect Glassnode data run the script called "Glassnode_Data_Collection.ipynb"
+- To collect sentiment data run the following scripts: Sentiment_Data_Collection_Crypto.ipynb, Sentiment_Data_Collection_FX.ipynb, Sentiment_Data_Collection_Stock.ipynb
+- Lastly, to collect commodities and inflation rates run Indices_Commodities_Inflation_Interest_rates.ipynb notebook.
+
+Note: Some of these scripts require API key/token. Make sure you provide and paste your keys/tokens properly into the scripts.
+
+### Step 2: Data Preparation
+Run the following scripts located in the Data_Preparation directory for the data cleaning and preparation process:
+- Data_Cleaning.ipynb
+- Data_Preprocessing.ipynb
+- Data_Preprocessing_hourly.ipynb
+
+### Step 3: Model Hyperparameters Tunings
+#### Tuning Base Models
+Navigate to the Prediction_Models directory and run the following scripts:
+- encoder_only_vanilla_transformer_optimisation_hourly.py
+- encoder_decoder_vanilla_transformer_optimisation_hourly.py
+
+#### Tuning Preformer
+Navigate to Prediction_Models/other_models_to_compare/LTSF-Linear-main directory and run the following script:
+- preformer_hyper_parameter_tuning.py
+
+Note: For LTSF_Linear and Preformer models make sure the LTSF_Linear conda environment is always active. Next before running the optimisation script for the Preformer, run the notebook called data_prep.ipynb (located in Prediction_Models/other_models_to_compare) which will prepare Training, Validation and Testing sets for tuning, training and testing.
+
+### Step 4: Model Training and Testing
+Note: For the base models please ensure that bitcoinproject1 conda environment is activated. For LTSF_Linear and Preformer models make sure the LTSF_Linear conda environment is active as well.
+
+#### Base Models Training and Testing
+Navigate to the Prediction_Models directory and run the following script:
+- vanilla_transformer_experiments_hourly.ipynb
+
+#### Preformer Training and Testing
+Navigate to Prediction_Models/other_models_to_compare/LTSF-Linear-main directory and run the following script:
+- preformer_models_btc_data.ipynb
+
+#### DLinear and NLinear Model Training and Testing
+Navigate to Prediction_Models/other_models_to_compare/LTSF-Linear-main directory and run the following script:
+- train_linear_models_btc_data.ipynb
+- test_linear_models_btc_data.ipynb
+
+### Step 5: Running Streamlit Applications (Predicting next hour's Bitcoin close price)
+If you would like to run the demo Streamlit application, activate the LTSF_Linear environment. Next, make sure you have installed the Streamlit python package properly. You can install it using the following command:
+
+  ```pip install streamlit```
+
+Next, navigate to Inference directory and run the following command:
+
+  ```streamlit run app.py```
